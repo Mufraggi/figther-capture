@@ -25,7 +25,7 @@ func (v *VideoService) Run() {
 		input := char[:len(char)-1]
 		if err != nil {
 			fmt.Println("Erreur de lecture:", err)
-			continue
+			//		continue
 		}
 		switch input {
 		case "":
@@ -54,9 +54,6 @@ func (v *VideoService) rec() {
 		log.Fatal(err.Error())
 		return
 	}
-
-	defer writer.Close()
-	defer webcam.Close()
 
 	v.videoRecorder.Rec(writer, webcam)
 	err = v.c.Send(file)

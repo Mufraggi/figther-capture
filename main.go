@@ -25,7 +25,7 @@ func main() {
 		log.Fatal(err)
 	}
 	client := services.NewClientHttp(env.BackendUrl)
-	videoRecorder := services.NewVideoRecorder(20*time.Second, 0)
+	videoRecorder := services.NewVideoRecorder(10*time.Second, 0)
 	videoService := services.NewVideoService(videoRecorder, client)
 	videoService.Run()
 }

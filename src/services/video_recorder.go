@@ -30,6 +30,8 @@ func (v *VideoRecorder) Rec(writer *gocv.VideoWriter, webcam *gocv.VideoCapture)
 			break
 		}
 	}
+	defer writer.Close()
+	defer webcam.Close()
 	fmt.Print("end at: %v", time.Now())
 }
 func (v *VideoRecorder) NewWebCam() (*gocv.VideoCapture, error) {
@@ -37,7 +39,7 @@ func (v *VideoRecorder) NewWebCam() (*gocv.VideoCapture, error) {
 }
 
 func (v *VideoRecorder) NewWriter(videoFile string) (*gocv.VideoWriter, error) {
-	writer, err := gocv.VideoWriterFile(videoFile, "h264", 24, 1920, 1080, true)
+	writer, err := gocv.VideoWriterFile(videoFile, "mp4v", 24, 1920, 1080, true)
 	return writer, err
 }
 
