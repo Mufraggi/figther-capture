@@ -6,50 +6,41 @@ import (
 	"time"
 )
 
-const videoDuration = 6 * time.Minute // Durée de 6 minutes
-func createFileName() string {
-	timestamp := time.Now()
-	dateStr := timestamp.Format("2006-01-02_15-04-05")
-	return fmt.Sprintf("%s.mp4", dateStr)
+type IVideoRecorder interface {
+	Rec(*gocv.VideoWriter, *gocv.VideoCapture)
+	NewWriter(filename string) (*gocv.VideoWriter, error)
+	NewWebCam() (*gocv.VideoCapture, error)
+}
+type VideoRecorder struct {
+	duration   time.Duration
+	cameraPort int
 }
 
-func RecordVideo(webcam *gocv.VideoCapture, videoFile string) {
-	window := gocv.NewWindow("Press 'Enter' to start recording")
+func (v *VideoRecorder) Rec(writer *gocv.VideoWriter, webcam *gocv.VideoCapture) {
 	img := gocv.NewMat()
-	defer window.Close()
 	defer img.Close()
-
-	// Attendre que l'utilisateur appuie sur Entrée pour démarrer l'enregistrement
-	fmt.Println("Appuyez sur Entrée pour démarrer l'enregistrement vidéo de 6 minutes.")
-	var input string
-	fmt.Scanln(&input) // Attend l'entrée de l'utilisateur
-
-	// Définir le writer pour enregistrer la vidéo1920x1080
-	writer, _ := gocv.VideoWriterFile(videoFile, "h264", 24, 1920, 1080, true)
-	defer writer.Close()
-
-	// Capturer et enregistrer la vidéo pendant la durée spécifiée
 	start := time.Now()
-	fmt.Print(start)
+	fmt.Print("start at: %v", start)
 	for {
 		if ok := webcam.Read(&img); !ok || img.Empty() {
 			break
 		}
-
-		// Montrer l'image à l'écran
-		window.IMShow(img)
-
-		// Écrire dans le fichier vidéo
 		writer.Write(img)
-
-		// Sortir après 6 minutes
-		if time.Since(start) > videoDuration {
-			break
-		}
-
-		if window.WaitKey(1) == 27 { // Sortir avec Échap si besoin
+		if time.Since(start) > v.duration {
 			break
 		}
 	}
-	fmt.Println("Enregistrement terminé")
+	fmt.Print("end at: %v", time.Now())
+}
+func (v *VideoRecorder) NewWebCam() (*gocv.VideoCapture, error) {
+	return gocv.OpenVideoCapture(v.cameraPort)
+}
+
+func (v *VideoRecorder) NewWriter(videoFile string) (*gocv.VideoWriter, error) {
+	writer, err := gocv.VideoWriterFile(videoFile, "h264", 24, 1920, 1080, true)
+	return writer, err
+}
+
+func NewVideoRecorder(duration time.Duration, cameraPort int) IVideoRecorder {
+	return &VideoRecorder{duration: duration, cameraPort: cameraPort}
 }

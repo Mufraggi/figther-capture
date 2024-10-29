@@ -1,41 +1,72 @@
 package services
 
 import (
+	"bufio"
 	"fmt"
+	"log"
 	"os"
-	"os/exec"
+	"time"
 )
 
 type IVideoService interface {
-	AddLogoToVideo(inputVideo, outputVideo string) error
+	Run()
+}
+type VideoService struct {
+	videoRecorder IVideoRecorder
+	c             IClientHttp
 }
 
-type videoService struct {
-	logoPath string
+func (v *VideoService) Run() {
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Println("Appuyez sur Entrée pour démarrer/arrêter l'enregistrement")
+	fmt.Println("Appuyez sur 'q' pour quitter")
+	for {
+		char, err := reader.ReadString('\n')
+		input := char[:len(char)-1]
+		if err != nil {
+			fmt.Println("Erreur de lecture:", err)
+			continue
+		}
+		switch input {
+		case "":
+			v.rec()
+		}
+
+	}
 }
 
-func (v *videoService) AddLogoToVideo(inputVideo, outputVideo string) error {
-	if _, err := os.Stat(inputVideo); os.IsNotExist(err) {
-		return fmt.Errorf("le fichier vidéo d'entrée n'existe pas : %s", inputVideo)
-	}
-	if _, err := os.Stat(v.logoPath); os.IsNotExist(err) {
-		return fmt.Errorf("le fichier logo n'existe pas : %s", v.logoPath)
-	}
+func (v *VideoService) createFileName() string {
+	timestamp := time.Now()
+	dateStr := timestamp.Format("2006-01-02_15-04-05")
+	return fmt.Sprintf("%s.mp4", dateStr)
+}
 
-	cmd := exec.Command("ffmpeg", "-i", inputVideo, "-i", v.logoPath, "-filter_complex",
-		"[1:v] scale=200:200 [logo]; [0:v][logo] overlay=10:H-h-10", "-c:a", "copy", outputVideo)
+func (v *VideoService) rec() {
+	file := v.createFileName()
+	webcam, err := v.videoRecorder.NewWebCam()
 
-	// Affiche la commande pour le debug
-	fmt.Printf("Running command: %v\n", cmd)
-
-	// Exécute la commande et capture les erreurs
-	err := cmd.Run()
 	if err != nil {
-		return fmt.Errorf("erreur lors de l'exécution de ffmpeg: %v", err)
+		log.Fatal(err)
+		return
 	}
-	return nil
+	writer, err := v.videoRecorder.NewWriter(file)
+	if err != nil {
+		log.Fatal(err.Error())
+		return
+	}
+
+	defer writer.Close()
+	defer webcam.Close()
+
+	v.videoRecorder.Rec(writer, webcam)
+	err = v.c.Send(file)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 }
 
-func NewVideoService(logoPath string) IVideoService {
-	return &videoService{logoPath: logoPath}
+func NewVideoService(
+	videoRecorder IVideoRecorder,
+	c IClientHttp) IVideoService {
+	return &VideoService{videoRecorder, c}
 }

@@ -1,1 +1,0 @@
-# figther-capture
