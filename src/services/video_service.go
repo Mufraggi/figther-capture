@@ -25,11 +25,16 @@ func (v *VideoService) Run() {
 		input := char[:len(char)-1]
 		if err != nil {
 			fmt.Println("Erreur de lecture:", err)
-			//		continue
 		}
 		switch input {
 		case "":
-			v.rec()
+			filename := v.rec()
+			if filename != nil {
+				err := v.deleteVideo(*filename)
+				if err != nil {
+					fmt.Println(err)
+				}
+			}
 		}
 
 	}
@@ -41,25 +46,35 @@ func (v *VideoService) createFileName() string {
 	return fmt.Sprintf("%s.mp4", dateStr)
 }
 
-func (v *VideoService) rec() {
+func (v *VideoService) rec() *string {
 	file := v.createFileName()
 	webcam, err := v.videoRecorder.NewWebCam()
 
 	if err != nil {
 		log.Fatal(err)
-		return
+		return nil
 	}
 	writer, err := v.videoRecorder.NewWriter(file)
 	if err != nil {
 		log.Fatal(err.Error())
-		return
+		return nil
 	}
 
 	v.videoRecorder.Rec(writer, webcam)
 	err = v.c.Send(file)
 	if err != nil {
 		log.Fatal(err.Error())
+		return nil
 	}
+	return &file
+}
+func (s *VideoService) deleteVideo(path string) error {
+	err := os.Remove(path)
+	if err != nil {
+		fmt.Println("Erreur lors de la suppression du fichier :", err)
+		return err
+	}
+	return nil
 }
 
 func NewVideoService(
