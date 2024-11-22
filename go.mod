@@ -5,7 +5,6 @@ go 1.23
 require (
 	github.com/Netflix/go-env v0.1.2
 	github.com/go-playground/validator/v10 v10.22.1
-	gocv.io/x/gocv v0.39.0
 )
 
 require (

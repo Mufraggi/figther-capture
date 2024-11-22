@@ -20,6 +20,7 @@ func getEnvConfig[T any]() (*T, error) {
 	return &environment, nil
 }
 func main() {
+
 	env, err := getEnvConfig[Env]()
 	if err != nil {
 		log.Fatal(err)

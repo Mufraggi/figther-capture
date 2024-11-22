@@ -28,45 +28,48 @@ func (v *VideoService) Run() {
 		}
 		switch input {
 		case "":
-			filename := v.rec()
-			if filename != nil {
-				err := v.deleteVideo(*filename)
-				if err != nil {
-					fmt.Println(err)
-				}
-			}
+			v.multipleCapture(3)
 		}
-
 	}
 }
 
-func (v *VideoService) createFileName() string {
+func (v *VideoService) multipleCapture(captureNb int) {
 	timestamp := time.Now()
 	dateStr := timestamp.Format("2006-01-02_15-04-05")
-	return fmt.Sprintf("%s.mp4", dateStr)
+	for i := 0; i < captureNb; i++ {
+		filename := v.createFileName(i, dateStr)
+		v.rec(filename)
+	}
 }
 
-func (v *VideoService) rec() *string {
-	file := v.createFileName()
-	webcam, err := v.videoRecorder.NewWebCam()
+func (v *VideoService) createFileName(run int, dateStr string) string {
+	return fmt.Sprintf("%s-part_%d.mp4", dateStr, run)
+}
 
+func (v *VideoService) rec(file string) {
+	fmt.Println("%s\n", file)
+	filename, err := v.videoRecorder.Rec(file)
 	if err != nil {
-		log.Fatal(err)
-		return nil
+		log.Println("Error record:", err)
+		return
 	}
-	writer, err := v.videoRecorder.NewWriter(file)
-	if err != nil {
-		log.Fatal(err.Error())
-		return nil
-	}
-
-	v.videoRecorder.Rec(writer, webcam)
-	err = v.c.Send(file)
-	if err != nil {
-		log.Fatal(err.Error())
-		return nil
-	}
-	return &file
+	go func() {
+		timestamp1 := time.Now()
+		dateStr1 := timestamp1.Format("2006-01-02_15-04-05")
+		fmt.Println(filename, dateStr1, err)
+		err := v.c.Send(*filename)
+		timestamp := time.Now()
+		dateStr := timestamp.Format("2006-01-02_15-04-05")
+		fmt.Println(filename, dateStr, err)
+		if err != nil {
+			log.Println("Error sending file:", err)
+			return
+		}
+		err = v.deleteVideo(file)
+		if err != nil {
+			log.Println("Error deleting file:", err)
+		}
+	}()
 }
 func (s *VideoService) deleteVideo(path string) error {
 	err := os.Remove(path)

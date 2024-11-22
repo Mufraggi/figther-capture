@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  webcam_capture:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    privileged: true  # Nécessaire pour accéder aux périphériques
+    devices:
+      - /dev/video0:/dev/video0  # Accès à la webcam
+      - /dev/input:/dev/input    # Accès au clavier
+    stdin_open: true  # Garde l'entrée standard ouverte pour lire les touches
+    tty: true         # Fournit un terminal interactif pour la saisie clavier

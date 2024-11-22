@@ -41,7 +41,7 @@ func (c *ClientHttp) Send(filePath string) error {
 	if err != nil {
 		return fmt.Errorf("erreur fermeture writer : %w", err)
 	}
-
+	fmt.Println("%s\n", c.url)
 	req, err := http.NewRequest("POST", c.url, &requestBody)
 	if err != nil {
 		return fmt.Errorf("erreur création requête : %w", err)
@@ -50,7 +50,7 @@ func (c *ClientHttp) Send(filePath string) error {
 	req.ContentLength = int64(requestBody.Len())
 
 	client := &http.Client{
-		Timeout: 5 * time.Minute,
+		Timeout: 10 * time.Minute,
 	}
 	resp, err := client.Do(req)
 	if err != nil {
